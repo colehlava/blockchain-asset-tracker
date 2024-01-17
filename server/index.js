@@ -1,5 +1,10 @@
 // index.js
 
+// Import modules
+const web3 = require('web3');
+// const addy = web3.eth.accounts.recover('Test message to sign\nNonce:123', '0x34e13908eae48c25380ffdf9048741785e73116825cfac97aa8e7987586fc5101f239ca3cc1c7fb8dad36d1636758393c323a4a52519eb99db0d4329391949901b');
+const jwt = require('jsonwebtoken');
+
 // Initialize Express
 const express = require('express');
 const cors = require('cors');
@@ -16,13 +21,13 @@ const client = new MongoClient(mongodbURI);
 // Constants
 const port = 8000;
 const DEFAULT_DB_NAME = "primarydb";
+const APP_MESSAGE_TO_SIGN = "Blockchain based chain of custody sigmsg\nNonce:";
+const JWT_SECRET = 'myjwtsecret';
 
 
 async function readFromDB(dbName, collection, query) {
   try {
     await client.connect();
-    console.log("DB client connected");
-
     const mongoDB = client.db(dbName);
     const dbCollection = mongoDB.collection(collection);
 
@@ -36,7 +41,8 @@ async function readFromDB(dbName, collection, query) {
     };
 
     const result = await dbCollection.find(query, options);
-    await result.forEach(console.dir);
+    // await result.forEach(console.dir);
+    return result;
 
   } finally {
     await client.close();
@@ -86,6 +92,7 @@ async function fillDB() {
 
 
 async function writeToDB(dbName, collection, dataToWrite) {
+    await client.connect();
     const mongoDB = client.db(dbName);
     const dbCollection = mongoDB.collection(collection);
 
@@ -94,7 +101,7 @@ async function writeToDB(dbName, collection, dataToWrite) {
        console.log(`Document was inserted with the _id: ${insertResult.insertedId}`);
 
     } catch(e) {
-       console.log(`An Exception occurred during write.`);
+       console.log(`An Exception occurred during write: ${e}`);
     }
 }
 
@@ -109,6 +116,46 @@ app.post('/myapi', (req, res) => {
 }); 
 
 
+async function handleAuth(address, res) {
+    try {
+        await client.connect();
+        const mongoDB = client.db(DEFAULT_DB_NAME);
+        const dbCollection = mongoDB.collection("users");
+        const user = await dbCollection.findOne({ address: address });
+
+        if (user) {
+            console.log(`user found: ${user}`);
+        }
+        else {
+            console.log(`Creating user with address: ${address}`);
+            writeToDB(DEFAULT_DB_NAME, "users", { address: address, tier: 'basic' });
+        }
+
+        const token = jwt.sign({ address: address }, JWT_SECRET, { expiresIn: "1h" });
+
+        // @TODO: move to verify api helper function
+        // Verify the token
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const tokenAddress = decoded.address;
+        console.log(`tokenAddress = ${tokenAddress}`);
+
+        res.json({ jwt: token });
+
+    } finally {
+        await client.close();
+    }
+}
+
+// Authenticate user, generate and return JWT
+app.post('/auth', (req, res) => { 
+    const signature = req.body.signature;
+    const address = web3.eth.accounts.recover(APP_MESSAGE_TO_SIGN, signature);
+    console.log(`auth useraddress = ${address}`);
+
+    handleAuth(address, res);
+}); 
+
+
 // Retrieve users assets from db
 app.post('/assets', (req, res) => { 
     console.log(`assets useraddress = ${req.body.useraddress}`);
@@ -120,9 +167,18 @@ app.post('/assets', (req, res) => {
 }); 
 
 
+async function printUsers() {
+    await client.connect();
+    const mongoDB = client.db(DEFAULT_DB_NAME);
+    const dbCollection = mongoDB.collection("users");
+    const users = await dbCollection.find();
+    await users.forEach(console.dir);
+}
 
 app.listen(port, () => { 
     console.log(`Server is running on port ${port}`); 
+
+    printUsers();
 });
 
 

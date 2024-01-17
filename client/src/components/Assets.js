@@ -9,6 +9,7 @@ function Assets(props) {
   const [data, setData] = useState([]);
 
   useEffect(() => {
+      // @TODO: replace address with JWT (note: address is lower case)
       const requestBody = JSON.stringify({ useraddress: props.useraddress });
 
       fetch('http://localhost:8000/assets', {
