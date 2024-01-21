@@ -1,9 +1,17 @@
 // index.js
 
 // Import modules
-const web3 = require('web3');
-// const addy = web3.eth.accounts.recover('Test message to sign\nNonce:123', '0x34e13908eae48c25380ffdf9048741785e73116825cfac97aa8e7987586fc5101f239ca3cc1c7fb8dad36d1636758393c323a4a52519eb99db0d4329391949901b');
+require('dotenv').config();
 const jwt = require('jsonwebtoken');
+
+// Initialize web3 components
+// const web3 = require('web3');
+const { Web3 } = require('web3');
+// const web3 = new Web3();
+// const web3 = new Web3(new Web3.providers.HttpProvider("https://eth-mainnet.g.alchemy.com/v2/xHaks7r4ZQXMNe6GTQEtCDAvv4n9YGh0")); // eth mainnet
+// const web3 = new Web3(new Web3.providers.HttpProvider("https://eth-goerli.g.alchemy.com/v2/LmgUXUY7VgKycjd3WX-n3uVbt2v0hkL6")); // goerli test chain
+const web3 = new Web3(new Web3.providers.HttpProvider("https://eth-sepolia.g.alchemy.com/v2/9i8mQHinG7HL9dPghhYmiP7paLmO9tTK")); // sepolia test chain
+
 
 // Initialize Express
 const express = require('express');
@@ -19,10 +27,12 @@ const mongodbURI = "mongodb://127.0.0.1:27017";
 const client = new MongoClient(mongodbURI);
 
 // Constants
-const port = 8000;
-const DEFAULT_DB_NAME = "primarydb";
+const PORT = process.env.PORT;
+const SERVER_WALLET_ADDRESS = process.env.SERVER_WALLET_ADDRESS;
+const SERVER_PRIVATE_KEY = process.env.SERVER_PRIVATE_KEY;
+const DEFAULT_DB_NAME = process.env.DEFAULT_DB_NAME;
+const JWT_SECRET = process.env.JWT_SECRET;
 const APP_MESSAGE_TO_SIGN = "Blockchain based chain of custody sigmsg\nNonce:";
-const JWT_SECRET = 'myjwtsecret';
 
 
 async function readFromDB(dbName, collection, query) {
@@ -175,10 +185,34 @@ async function printUsers() {
     await users.forEach(console.dir);
 }
 
-app.listen(port, () => { 
-    console.log(`Server is running on port ${port}`); 
+async function runDebugStatements() {
 
-    printUsers();
+    /*
+    const wallet = await web3.eth.accounts.wallet.create(1);
+    console.log(`New account created:\naddress: ${wallet.at(0).address}\nprivateKey: ${wallet.at(0).privateKey}`);
+
+    const addy = web3.eth.accounts.recover('Test message to sign\nNonce:123', '0x34e13908eae48c25380ffdf9048741785e73116825cfac97aa8e7987586fc5101f239ca3cc1c7fb8dad36d1636758393c323a4a52519eb99db0d4329391949901b');
+
+    web3.eth.getAccounts().then((accounts) => {
+        // Display all Ganache Accounts
+        console.log("Accounts:", accounts);
+    });
+
+    const testAddress = SERVER_WALLET_ADDRESS;
+    const balance = await web3.eth.getBalance(testAddress);
+    console.log(`balance{${testAddress}} = ${balance}`);
+     */
+
+    const accounts = await web3.eth.accounts.wallet.add(SERVER_PRIVATE_KEY);
+    const accountBalance = await web3.eth.getBalance(accounts[0].address);
+    console.log(`${accounts[0].address} added to wallet\nbalance = ${accountBalance}`);
+}
+
+app.listen(PORT, () => { 
+    console.log(`Server is running on port ${PORT}`); 
+
+    // printUsers();
+    runDebugStatements();
 });
 
 
