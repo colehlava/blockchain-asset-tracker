@@ -6,10 +6,12 @@ import "./Asset.sol";
 
 contract ChainOfCustody {
 
-    address private owner;
-    address private lastContractDeployed;
+    uint public constant REGISTRATION_FEE = 10 ether;
 
-    event Register(address indexed _owner, address _assetAddress);
+    address private owner;
+    address private lastContractDeployed; // @TODO: delete
+
+    event Register(address indexed _owner, address indexed _assetAddress);
 
     constructor() {
         owner = msg.sender; // 'msg.sender' is sender of current call, contract deployer for a constructor
@@ -24,18 +26,19 @@ contract ChainOfCustody {
         return owner;
     }
 
+    // @TODO: delete
     function getLastContractDeployed() external view returns (address) {
         return lastContractDeployed;
     }
 
-    function registerAsset(address assetOwner, string memory assetName) public returns(bool successful) {
-        // require(msg.value >= registrationFee, "Insufficient gas money");
+    function registerAsset(address assetOwner, string memory assetName) external payable {
+        // @TODO: test implementation of registration fee
+        require(msg.value >= REGISTRATION_FEE, "Insufficient payment value: " + REGISTRATION_FEE + " required");
 
         // Deploy Asset contract
         Asset newAsset = new Asset(assetOwner, assetName);
-        lastContractDeployed = address(newAsset);
+        lastContractDeployed = address(newAsset); // @TODO: delete
         emit Register(assetOwner, address(newAsset));
-        return true;
     }
 
 
