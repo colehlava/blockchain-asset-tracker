@@ -1,4 +1,6 @@
 client/node_modules
+client/src/abi
+contract/build
 server/node_modules
 *.swp
 .env

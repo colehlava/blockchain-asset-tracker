@@ -49,7 +49,7 @@ contract Asset {
     }
 
     // @TODO: Add more details to Asset (timestamp, etc.)
-    function getDetails() external view returns (string) {
+    function getDetails() external view returns (string memory) {
         return assetName;
     }
 
@@ -62,7 +62,7 @@ contract Asset {
     function receiveTransfer() external transferIsPending transferIsGoingToCaller isUnlocked {
         transferPending = false;
         assetTransferReceiver = address(0);
-        address constant previousOwner = owner;
+        address previousOwner = owner;
         owner = msg.sender;
         emit TransferComplete(previousOwner, msg.sender, address(this));
     }

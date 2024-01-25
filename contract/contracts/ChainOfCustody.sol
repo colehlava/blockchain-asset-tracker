@@ -7,6 +7,7 @@ import "./Asset.sol";
 contract ChainOfCustody {
 
     uint public constant REGISTRATION_FEE = 10 ether;
+    string public constant REGISTRATION_FEE_STRING = "10 ether";
 
     address private owner;
     address private lastContractDeployed; // @TODO: delete
@@ -32,8 +33,8 @@ contract ChainOfCustody {
     }
 
     function registerAsset(address assetOwner, string memory assetName) external payable {
-        // @TODO: test implementation of registration fee
-        require(msg.value >= REGISTRATION_FEE, "Insufficient payment value: " + REGISTRATION_FEE + " required");
+        // @TODO: uncomment this when done testing
+        // require(msg.value >= REGISTRATION_FEE, "Insufficient payment value: 10 ether required");
 
         // Deploy Asset contract
         Asset newAsset = new Asset(assetOwner, assetName);
@@ -41,6 +42,10 @@ contract ChainOfCustody {
         emit Register(assetOwner, address(newAsset));
     }
 
+    // @TODO: check if memory is correct data location
+    function receiveAsset(string memory filter) external {
+        
+    }
 
     /*
     function changeOwner(address newOwner) public isOwner {
