@@ -9,26 +9,16 @@ const web3 = new Web3(new Web3.providers.HttpProvider("https://eth-mainnet.g.alc
 
 // <h1>Assets for {props.useraddress}</h1>
 
-function Assets(props) {
+// function Assets(props) {
+function Assets({ assetAddresses }) {
 
   const [data, setData] = useState([]);
   const [accounts, setAccounts] = useState([]);
 
   useEffect(() => {
-      // @TODO: replace address with JWT (note: address is lower case)
-      const requestBody = JSON.stringify({ useraddress: props.useraddress });
-
-      web3.eth.getAccounts().then((accounts) => {
-          setAccounts(accounts);
-          console.log("Accounts:", accounts);
-      });
 
       /*
-      <ul>
-        {data.map(item => (
-          <li key={item.id}>{item.name}</li>
-        ))}
-      </ul>
+      const requestBody = JSON.stringify({ useraddress: props.useraddress });
 
       fetch('http://localhost:8000/assets', {
             method: 'POST',
@@ -44,13 +34,22 @@ function Assets(props) {
 
   }, []);
 
+  /*
   if (!data) {
     return <div>Loading...</div>;
   }
+   */
 
   return (
     <div>
-      <h1>My Data</h1>
+      <h1>My Assets</h1>
+
+      <ol>
+        {assetAddresses.map(item => (
+          <li key={item}>{item}</li>
+        ))}
+      </ol>
+
     </div>
   );
 }

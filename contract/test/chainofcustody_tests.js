@@ -25,8 +25,8 @@ contract('ChainOfCustody', (accounts) => {
         // assert.equal(result.logs.length, 0, "Contract should not emit Register event when transaction value is less than registration fee");
         // assert.fail( await instance.registerAsset(accounts[0], "Asset Test Name", { from: accounts[0], value: 9 * 10**18}) );
         await truffleAssert.reverts(
-            instance.registerAsset(accounts[0], "Asset Test Name", { from: accounts[0], value: 9 * 10**18 }),
-            "Insufficient payment value: 10 ether required"
+            instance.registerAsset(accounts[0], "Asset Test Name", { from: accounts[0], value: 0.5 * 10**18 }),
+            "Insufficient payment value: 1 ether required"
         );
     });
 });

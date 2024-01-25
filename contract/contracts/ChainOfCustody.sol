@@ -6,15 +6,16 @@ import "./Asset.sol";
 
 contract ChainOfCustody {
 
-    uint public constant REGISTRATION_FEE = 10 ether;
-    string public constant REGISTRATION_FEE_STRING = "10 ether";
+    uint public constant REGISTRATION_FEE = 1 ether;
+    string public constant REGISTRATION_FEE_STRING = "1 ether";
 
     address private owner;
     address private lastContractDeployed; // @TODO: delete
 
     event Register(address indexed _owner, address indexed _assetAddress);
 
-    constructor() {
+    // @TODO: test registerAsset without payable in constructor
+    constructor() payable {
         owner = msg.sender; // 'msg.sender' is sender of current call, contract deployer for a constructor
     }
 
@@ -34,7 +35,7 @@ contract ChainOfCustody {
 
     function registerAsset(address assetOwner, string memory assetName) external payable {
         // @TODO: uncomment this when done testing
-        // require(msg.value >= REGISTRATION_FEE, "Insufficient payment value: 10 ether required");
+        require(msg.value >= REGISTRATION_FEE, "Insufficient payment value: 1 ether required");
 
         // Deploy Asset contract
         Asset newAsset = new Asset(assetOwner, assetName);

@@ -17,6 +17,7 @@ contract Asset {
     constructor(address _initialOwner, string memory _assetName) {
         owner = _initialOwner;
         assetName = _assetName;
+        locked = false;
         transferPending = false;
         assetTransferReceiver = address(0);
     }
