@@ -34,7 +34,6 @@ contract ChainOfCustody {
     }
 
     function registerAsset(address assetOwner, string memory assetName) external payable {
-        // @TODO: uncomment this when done testing
         require(msg.value >= REGISTRATION_FEE, "Insufficient payment value: 1 ether required");
 
         // Deploy Asset contract
@@ -42,33 +41,4 @@ contract ChainOfCustody {
         lastContractDeployed = address(newAsset); // @TODO: delete
         emit Register(assetOwner, address(newAsset));
     }
-
-    // @TODO: check if memory is correct data location
-    function receiveAsset(string memory filter) external {
-        
-    }
-
-    /*
-    function changeOwner(address newOwner) public isOwner {
-        emit OwnerSet(owner, newOwner);
-        owner = newOwner;
-    }
-
-
-    // =====================================================================================
-
-
-    function getBalance(address addr) public view returns(uint) {
-        return balances[addr];
-    }
-
-    function sendCoin(address receiver, uint amount) public returns(bool sufficient) {
-        if (balances[msg.sender] < amount) return false;
-        balances[msg.sender] -= amount;
-        balances[receiver] += amount;
-        emit Transfer(msg.sender, receiver, amount);
-        return true;
-    }
-     */
 }
-

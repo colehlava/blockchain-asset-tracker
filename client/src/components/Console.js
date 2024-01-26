@@ -4,11 +4,11 @@ import React, { useState } from 'react';
 import Web3 from "web3";
 import { useSDK } from '@metamask/sdk-react';
 import { Buffer } from 'buffer';
-import Assets from './Assets.js';
+import Asset from './Asset.js';
 
-const DAPP_SMART_CONTRACT_ABI = require('../abi/ChainOfCustody.json'); // @TODO: change back to this path when deploying dapp
+const DAPP_SMART_CONTRACT_ABI = require('../abi/ChainOfCustody.json'); // @TODO: change to more descriptive name 
 // const DAPP_SMART_CONTRACT_ABI = require('../../../contract/build/contracts/ChainOfCustody.json'); // need to add symlink to use this path
-const DAPP_SMART_CONTRACT_ADDRESS = '0xb15B9FC785a3E1D0EE5c18F8b2C298711D1a67B8'; // @TODO: update contract address
+const DAPP_SMART_CONTRACT_ADDRESS = '0x55874C4A0362037279e6d62794454d9fd2CDE4e7'; // @TODO: update contract address
 const DAPP_MESSAGE_TO_SIGN = 'Blockchain based chain of custody sigmsg\nNonce:'; // @TODO: implement nonce
 
 const DEBUG = true;
@@ -27,7 +27,8 @@ function Console() {
     const [signedMessage, setSignedMessage] = useState('');
     const [registerAssetRPCResult, setRegisterAssetRPCResult] = useState('');
     const [registerAssetInitiated, setRegisterAssetInitiated] = useState(false);
-    const [userAssets, setUserAssets] = useState([]);
+    // const [userAssets, setUserAssets] = useState([]);
+    const [renderedAssets, setRenderedAssets] = useState([]);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -93,7 +94,8 @@ function Console() {
                 userAssetsList.push(assetAddress);
             }
 
-            setUserAssets(userAssetsList);
+            // setUserAssets(userAssetsList);
+            renderAssets(userAssetsList);
 
         } catch (err) {
             setSignResult(`Error while retrieving assets: ${err.message}`);
@@ -116,6 +118,7 @@ function Console() {
 
         const accounts = await window.web3.eth.getAccounts();
         setAccount(accounts?.[0]);
+        window.defaultAccount = accounts?.[0];
         console.log('Connected to ethereum with accounts:', accounts);
         const balance = await window.web3.eth.getBalance(accounts[0]);
         console.log(`Balance of default acount ${account} = ${balance}`);
@@ -172,6 +175,18 @@ function Console() {
     };
 
 
+    // @TODO: load all assets in parallel
+    async function renderAssets(assetAddressList) {
+        let renderedAssetsJSX = [];
+
+        for (let address of assetAddressList) {
+            renderedAssetsJSX.push( <Asset key={address} assetAddress={address} /> );
+        }
+
+        setRenderedAssets(renderedAssetsJSX);
+    }
+
+
     return (
         <>
             { connected && (
@@ -202,7 +217,7 @@ function Console() {
 
                             <button style={{ padding: 10, margin: 10 }} onClick={listAssets}>My Assets</button>
 
-                            { userAssets && <Assets assetAddresses={userAssets} /> }
+                            { renderedAssets && renderedAssets }
 
                         </>
                     ) : (

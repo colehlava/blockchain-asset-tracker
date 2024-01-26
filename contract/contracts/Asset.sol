@@ -68,4 +68,3 @@ contract Asset {
         emit TransferComplete(previousOwner, msg.sender, address(this));
     }
 }
-
