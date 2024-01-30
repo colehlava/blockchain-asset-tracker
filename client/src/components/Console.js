@@ -6,9 +6,10 @@ import { useSDK } from '@metamask/sdk-react';
 import { Buffer } from 'buffer';
 import Asset from './Asset.js';
 
-const DAPP_SMART_CONTRACT_ABI = require('../abi/ChainOfCustody.json'); // @TODO: change to more descriptive name 
-// const DAPP_SMART_CONTRACT_ABI = require('../../../contract/build/contracts/ChainOfCustody.json'); // need to add symlink to use this path
-const DAPP_SMART_CONTRACT_ADDRESS = '0x55874C4A0362037279e6d62794454d9fd2CDE4e7'; // @TODO: update contract address
+const ASSET_CONTRACT_ABI = require('../abi/Asset.json');
+const DAPP_SMART_CONTRACT_ABI = require('../abi/ChainOfCustody.json');
+// const DAPP_SMART_CONTRACT_ABI = require('../../../contract/build/contracts/ChainOfCustody.json'); // @NOTE: this avoids copying abi after recompile, but need to add symlink to use this path
+const DAPP_SMART_CONTRACT_ADDRESS = '0xBaDE4B085874694934DeD375eB37652d926aA451'; // @TODO: update contract address
 const DAPP_MESSAGE_TO_SIGN = 'Blockchain based chain of custody sigmsg\nNonce:'; // @TODO: implement nonce
 
 const DEBUG = true;
@@ -27,18 +28,18 @@ function Console() {
     const [signedMessage, setSignedMessage] = useState('');
     const [registerAssetRPCResult, setRegisterAssetRPCResult] = useState('');
     const [registerAssetInitiated, setRegisterAssetInitiated] = useState(false);
-    // const [userAssets, setUserAssets] = useState([]);
     const [renderedAssets, setRenderedAssets] = useState([]);
+    const [pendingTransfers, setPendingTransfers] = useState([]);
 
     const [formData, setFormData] = useState({
         name: '',
-        // email: '',
     });
 
 
     function initiateRegisterAsset() {
         setRegisterAssetInitiated(true);
     }
+
 
     const handleSubmitRegisterAssetForm = async (event) => {
         event.preventDefault();
@@ -81,24 +82,84 @@ function Console() {
 
     const listAssets = async () => {
         try {
+            let userAssetsMap = new Map();
+
+            // Get all assets originally registered in user's address
             const contract = new window.web3.eth.Contract(DAPP_SMART_CONTRACT_ABI.abi, DAPP_SMART_CONTRACT_ADDRESS);
             const pastEvents = await contract.getPastEvents('Register', { filter: { _owner: account }, fromBlock: 'earliest', toBlock: 'latest' }); // @TODO: change fromBlock to current block number at the time dapp is deployed
             const readableEvents = pastEvents.map(_ev => _ev.returnValues);
 
-            let userAssetsList = [];
             for (let i = 0; i < readableEvents.length; i++) {
-                // const owner = readableEvents[i]['_owner'];
                 const assetAddress = readableEvents[i]['_assetAddress'];
+                // const owner = readableEvents[i]['_owner'];
                 // console.log(`${owner} owns ${assetAddress}`);
-                // setUserAssets([...userAssets, assetAddress]);
+                userAssetsMap.set(assetAddress, true);
+            }
+
+            // Get all assets transferred out of user's address and remove them from user assets map
+            for (let [assetAddress] of userAssetsMap) {
+                const assetContract = new window.web3.eth.Contract(ASSET_CONTRACT_ABI.abi, assetAddress);
+                const transferEvents = await assetContract.getPastEvents('TransferComplete', { filter: { _from: account }, fromBlock: 'earliest', toBlock: 'latest' }); // @TODO: change fromBlock to current block number at the time dapp is deployed
+                const readableTransferEvents = transferEvents.map(_ev => _ev.returnValues);
+                const transferredAssetAddress = readableTransferEvents?.[0]?.['_assetAddress'];
+                if (transferredAssetAddress) {
+                    userAssetsMap.delete(transferredAssetAddress);
+                }
+            }
+
+            let userAssetsList = [];
+            for (let [assetAddress] of userAssetsMap) {
                 userAssetsList.push(assetAddress);
             }
 
-            // setUserAssets(userAssetsList);
             renderAssets(userAssetsList);
 
         } catch (err) {
             setSignResult(`Error while retrieving assets: ${err.message}`);
+            console.error(err);
+        }
+    };
+
+
+    const listPendingTransfers = async () => {
+        try {
+            // Get all assets registered by dapp smart contract
+            const contract = new window.web3.eth.Contract(DAPP_SMART_CONTRACT_ABI.abi, DAPP_SMART_CONTRACT_ADDRESS);
+            const pastEvents = await contract.getPastEvents('Register', { fromBlock: 'earliest', toBlock: 'latest' }); // @TODO: change fromBlock to current block number at the time dapp is deployed
+            const readableEvents = pastEvents.map(_ev => _ev.returnValues);
+
+            // Get all assets with transfer request to user's address and add them to user asset map
+            let userAssetsMap = new Map();
+            for (let i = 0; i < readableEvents.length; i++) {
+                const assetContract = new window.web3.eth.Contract(ASSET_CONTRACT_ABI.abi, readableEvents[i]['_assetAddress']);
+                const transferEvents = await assetContract.getPastEvents('TransferRequest', { filter: { _to: account }, fromBlock: 'earliest', toBlock: 'latest' }); // @TODO: change fromBlock to current block number at the time dapp is deployed
+                const readableTransferEvents = transferEvents.map(_ev => _ev.returnValues);
+                const pendingTransferAssetAddress = readableTransferEvents?.[0]?.['_assetAddress'];
+                if (pendingTransferAssetAddress) {
+                    userAssetsMap.set(pendingTransferAssetAddress, true);
+                }
+            }
+
+            // Remove assets with transfer complete to user's address
+            for (let [assetAddress] of userAssetsMap) {
+                const assetContract = new window.web3.eth.Contract(ASSET_CONTRACT_ABI.abi, assetAddress);
+                const transferEvents = await assetContract.getPastEvents('TransferComplete', { filter: { _to: account }, fromBlock: 'earliest', toBlock: 'latest' }); // @TODO: change fromBlock to current block number at the time dapp is deployed
+                const readableTransferEvents = transferEvents.map(_ev => _ev.returnValues);
+                const pendingTransferAssetAddress = readableTransferEvents?.[0]?.['_assetAddress'];
+                if (pendingTransferAssetAddress) {
+                    userAssetsMap.delete(pendingTransferAssetAddress);
+                }
+            }
+
+            let pendingTransfersList = [];
+            for (let [assetAddress] of userAssetsMap) {
+                pendingTransfersList.push(assetAddress);
+            }
+
+            setPendingTransfers(pendingTransfersList);
+
+        } catch (err) {
+            setSignResult(`Error while retrieving pending transfers: ${err.message}`);
             console.error(err);
         }
     };
@@ -214,11 +275,13 @@ function Console() {
                             { registerAssetRPCResult && <h3>registerAsset() result {registerAssetRPCResult}</h3> }
 
 
+                            <button style={{ padding: 10, margin: 10 }} onClick={ listPendingTransfers }>Pending Transfers</button>
+                            <h2>Pending Transfers</h2>
+                            { pendingTransfers && pendingTransfers }
 
-                            <button style={{ padding: 10, margin: 10 }} onClick={listAssets}>My Assets</button>
-
+                            <button style={{ padding: 10, margin: 10 }} onClick={ listAssets }>My Assets</button>
+                            <h2>My Assets</h2>
                             { renderedAssets && renderedAssets }
-
                         </>
                     ) : (
                         <>

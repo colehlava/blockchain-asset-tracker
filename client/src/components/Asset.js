@@ -8,7 +8,12 @@ function Asset({ assetAddress }) {
 
     const [assetData, setAssetData] = useState([]);
     const [assetHistory, setAssetHistory] = useState([]);
+    const [transferAssetInitiated, setTransferAssetInitiated] = useState(false);
     const [transferAssetRPCResult, setTransferAssetRPCResult] = useState([]);
+
+    const [formData, setFormData] = useState({
+        newOwner: '',
+    });
 
     useEffect(() => {
         retrieveAssetDetails();
@@ -50,19 +55,18 @@ function Asset({ assetAddress }) {
     }
 
 
-    const handleTransferAsset = async () => {
-        try {
-            // @TODO: get new owner input from user
-            const newAssetOwner = '0xDc20E06366292F040B3A0aBbfa46494a3a333e99';
+    const handleTransferAsset = async (event) => {
+        event.preventDefault();
 
+        try {
             // Call initiateTransfer RPC
             const contract = new window.web3.eth.Contract(ASSET_CONTRACT_ABI.abi, assetAddress);
-            const gasEstimate = await contract.methods.initiateTransfer(newAssetOwner).estimateGas({ from: window.defaultAccount });
-            const result = await contract.methods.initiateTransfer(newAssetOwner).send({ from: window.defaultAccount, gas: gasEstimate });
+            const gasEstimate = await contract.methods.initiateTransfer(formData['newOwner']).estimateGas({ from: window.defaultAccount });
+            const result = await contract.methods.initiateTransfer(formData['newOwner']).send({ from: window.defaultAccount, gas: gasEstimate });
             const receipt = await window.web3.eth.getTransactionReceipt(result['transactionHash']);
 
             if (receipt) {
-                console.log(`Transfer asset initiated: ${result['transactionHash']}`);
+                console.log(`Transfer asset to ${formData['newOwner']} initiated: ${result['transactionHash']}`);
                 setTransferAssetRPCResult(result['transactionHash']);
             }
 
@@ -82,7 +86,19 @@ function Asset({ assetAddress }) {
             <button style={{ padding: 10, margin: 10 }} onClick={ retrieveAssetHistory }>Show History</button>
             { assetHistory && assetHistory }
 
-            <button style={{ padding: 10, margin: 10 }} onClick={ handleTransferAsset }>Transfer Asset</button>
+            <button style={{ padding: 10, margin: 10 }} onClick={ function() { setTransferAssetInitiated(true) } }>Transfer Asset</button>
+            { transferAssetInitiated && (
+                <form onSubmit={ handleTransferAsset }>
+                    <input
+                        type="text"
+                        name="newOwner"
+                        placeholder="Address of new owner"
+                        value={formData.newOwner}
+                        onChange={(event) => setFormData({ ...formData, newOwner: event.target.value })}
+                    />
+                    <button type="submit">Submit</button>
+                </form>
+            )}
             { transferAssetRPCResult && transferAssetRPCResult }
 
         </div>
