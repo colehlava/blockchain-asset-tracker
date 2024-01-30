@@ -12,9 +12,10 @@ function Home() {
         setConsoleReady(true);
     };
 
+    // @TODO: implement search asset
     const handleSearchAsset = (event) => {
-        alert('An asset was searched: ' + assetToSearch);
         event.preventDefault();
+        alert('An asset was searched: ' + assetToSearch);
     };
 
     const handleTextInput = (event) => {
@@ -32,17 +33,16 @@ function Home() {
                     <h1>Home</h1>
                     <p></p>
 
-                    <form onSubmit={handleSearchAsset}>
+                    <form onSubmit={ handleSearchAsset} >
                         <label>
                           Name:
-                          <input type="text" value={assetToSearch} onChange={handleTextInput} onFocus={clearText} />
+                          <input type="text" value={ assetToSearch } onChange={handleTextInput} onFocus={clearText} />
                         </label>
                         <input type="submit" value="Submit" />
                     </form>
                     <p></p>
 
-                    <button onClick={renderConsole}>Register Asset</button>
-                    <button onClick={renderConsole}>Transfer Asset</button>
+                    <button onClick={ renderConsole }>Console</button>
                 </>
             )}
 

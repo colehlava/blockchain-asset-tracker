@@ -9,7 +9,7 @@ import Asset from './Asset.js';
 const ASSET_CONTRACT_ABI = require('../abi/Asset.json');
 const DAPP_SMART_CONTRACT_ABI = require('../abi/ChainOfCustody.json');
 // const DAPP_SMART_CONTRACT_ABI = require('../../../contract/build/contracts/ChainOfCustody.json'); // @NOTE: this avoids copying abi after recompile, but need to add symlink to use this path
-const DAPP_SMART_CONTRACT_ADDRESS = '0xBaDE4B085874694934DeD375eB37652d926aA451'; // @TODO: update contract address
+const DAPP_SMART_CONTRACT_ADDRESS = '0x616ddbdd8F84b46c984671C6Ac1b47d0CB5B231A'; // @TODO: update contract address
 const DAPP_MESSAGE_TO_SIGN = 'Blockchain based chain of custody sigmsg\nNonce:'; // @TODO: implement nonce
 
 const DEBUG = true;
